@@ -8,11 +8,11 @@ import (
 )
 
 // InstallComponent コンポーネントをインストールする
-func InstallComponent(componentDefineJSON commonpkgtools.ComponentDefineJSON, componentRepository string) bool {
+func InstallComponent(componentDefineJSON commonpkgtools.ComponentDefineJSON, sourcePath string) bool {
 	componentName := componentDefineJSON.ComponentName
 	frontendComponentPath := "frontend/src/components/" + componentName
 	if componentDefineJSON.Status.HasFrontend {
-		wrappedFrontendComponentPath := componentRepository + "/frontend"
+		wrappedFrontendComponentPath := sourcePath + "/frontend"
 		alreadyComponentExists, err := commonpkgtools.DirectoryExists(frontendComponentPath)
 		if err != nil {
 			log.Println(err)
@@ -31,7 +31,7 @@ func InstallComponent(componentDefineJSON commonpkgtools.ComponentDefineJSON, co
 	}
 	if componentDefineJSON.Status.HasBackend {
 		backendComponentPath := "backend/components/" + componentName
-		wrappedBackendComponentPath := componentRepository + "/backend"
+		wrappedBackendComponentPath := sourcePath + "/backend"
 		alreadyComponentExists, err := commonpkgtools.DirectoryExists(backendComponentPath)
 		if err != nil {
 			log.Println(err)
@@ -63,5 +63,11 @@ func InstallComponent(componentDefineJSON commonpkgtools.ComponentDefineJSON, co
 		}
 	}
 
+	err := commonpkgtools.RemoveDirectory(sourcePath)
+	if err != nil {
+		fmt.Println("インストール時に使用したディレクトリの削除に失敗しました。必要なら以下コマンドで削除してください。")
+		fmt.Println("rm -rf " + sourcePath)
+		return false
+	}
 	return true
 }

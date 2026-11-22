@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/ShioriShirasagi/bb-command/commands/component/install/tools"
@@ -14,35 +15,56 @@ func Exec(flags ...string) bool {
 		return false
 	}
 
-	componentName := flags[0]
-	ownerAndRepository := strings.Split(componentName, "/")
+	componentSpecify := flags[0]
+	ownerAndComponentName := strings.Split(componentSpecify, "/")
 
-	if len(ownerAndRepository) != 2 {
-		fmt.Println("引数が不正です。パッケージの指定は「owner名/パッケージ名」でなければなりません。")
+	if len(ownerAndComponentName) != 2 {
+		fmt.Println("引数が不正です。パッケージの指定は「owner名/パッケージ名@バージョン」の形式でなければなりません。")
+		return false
 	}
-	componentOwner := ownerAndRepository[0]
-	componentRepository := ownerAndRepository[1]
+	componentOwner := ownerAndComponentName[0]
+	componentNameWithVersion := ownerAndComponentName[1]
+	componentNameAndVersion := strings.Split(componentNameWithVersion, "@")
+	componentName := ""
+	componentVersion := "latest"
+	if len(componentNameAndVersion) == 1 {
+		componentName = componentNameWithVersion
+	} else {
+		componentName = componentNameAndVersion[0]
+		componentVersion = componentNameAndVersion[1]
+	}
 
-	downloadPath, err := tools.GitHubPackageDownloader(componentOwner, componentRepository)
+	downloadURL, fileName, err := tools.FindGitHubComponent(componentOwner, componentName, componentVersion)
 	if err != nil {
 		log.Println(err)
 		return false
 	}
 
-	err = tools.ZipExtract(downloadPath, componentRepository)
+	downloadPath := filepath.Base(fileName)
+	err = tools.DownloadFile(downloadURL, downloadPath)
 	if err != nil {
 		log.Println(err)
 		return false
 	}
 
-	componentDefJSONPath := componentRepository + "/component_define.json"
+	err = tools.ZipExtract(downloadPath, componentName)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	componentDefJSONPath := componentName + "/component_define.json"
 	componentDefineJSON, err := commonpkgtools.ReadComponentDefineJSON(componentDefJSONPath)
-
-	if !tools.InstallComponent(componentDefineJSON, componentRepository) {
+	if err != nil {
+		log.Println(err)
 		return false
 	}
 
-	fmt.Println("コンポーネントのインストールに成功しました！")
+	if !tools.InstallComponent(componentDefineJSON, componentName) {
+		return false
+	}
+
+	fmt.Println("コンポーネントのインストールに成功しました。")
 
 	return true
 }
@@ -63,5 +85,5 @@ func cantContinue(flags []string) bool {
 
 // cmdDetail コマンド詳細を表示する
 func cmdDetail() {
-	fmt.Print("Barebornにコンポーネントをインストールします。ShioriShirasagi/SampleComponentのように、Github名/コンポーネント名を引数に取ります。")
+	fmt.Print("Barebornにコンポーネントをインストールします。ShioriShirasagi/SampleComponent@v1.0.0のように、Github名/コンポーネント名@バージョンを引数に取ります。")
 }

@@ -3,39 +3,39 @@ package tools
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 )
 
-// GitHubComponentDownloader GitHubからコンポーネントをダウンロードする
-func GitHubPackageDownloader(componentOwner string, componentRepository string) (string, error) {
-	componentUrl := "https://github.com/" + componentOwner + "/" + componentRepository + "/releases/latest/download/" + componentRepository + ".zip"
+var client = &http.Client{Timeout: 60 * time.Second}
 
-	resp, err := http.Get(componentUrl)
+// DownloadFile downloadURLの内容を指定したpathに保存する
+func DownloadFile(downloadURL string, path string) error {
+	resp, err := client.Get(downloadURL)
 	if err != nil {
-		return "", err
+		return fmt.Errorf("ダウンロードに失敗: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println(fmt.Errorf("ダウンロード失敗: HTTP %d", resp.StatusCode))
-		return "", err
+		return fmt.Errorf("ダウンロードに失敗: HTTP %d (URL: %s)", resp.StatusCode, downloadURL)
 	}
 
-	downloadPath := componentRepository + ".zip"
-	out, err := os.Create(downloadPath)
+	tmp, err := os.CreateTemp(filepath.Dir(path), "download-*")
 	if err != nil {
-		log.Println(err)
-		return "", err
+		return err
 	}
-	defer out.Close()
+	defer os.Remove(tmp.Name()) // Rename成功後はファイルが無いので無害
 
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		log.Println(err)
-		return "", err
+	if _, err := io.Copy(tmp, resp.Body); err != nil {
+		tmp.Close()
+		return fmt.Errorf("ファイル書き込みに失敗: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return err
 	}
 
-	return downloadPath, nil
+	return os.Rename(tmp.Name(), path)
 }

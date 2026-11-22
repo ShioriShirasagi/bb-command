@@ -20,6 +20,7 @@ type ComponentFrontendConfig struct {
 
 type ComponentDefineJSON struct {
 	ComponentName    string                  `json:"component_name"`
+	Version          string                  `json:"version"`
 	Author           ComponentAuthor         `json:"author"`
 	Status           ComponentStatus         `json:"status"`
 	ComponentDepends []string                `json:"component_depends"`
