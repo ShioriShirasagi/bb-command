@@ -30,7 +30,7 @@ func Exec(flags ...string) bool {
 		return false
 	}
 
-	alreadyPackageExists, err := tools.DirectoryExists(componentWrapDir)
+	alreadyPackageExists, err := commonpkgtools.DirectoryExists(componentWrapDir)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -41,12 +41,12 @@ func Exec(flags ...string) bool {
 		return false
 	}
 
-	tools.FolderGenerator(componentWrapDir)
+	commonpkgtools.FolderGenerator(componentWrapDir)
 
 	if componentDefineJSON.Status.HasFrontend {
 		frontendComponentPath := "frontend/src/components/" + componentName
 		wrappedFrontendComponentPath := componentWrapDir + "/frontend"
-		err := tools.CopyDirectory(frontendComponentPath, wrappedFrontendComponentPath)
+		err := commonpkgtools.CopyDirectory(frontendComponentPath, wrappedFrontendComponentPath)
 		if err != nil {
 			log.Println(err)
 			return false
@@ -55,7 +55,7 @@ func Exec(flags ...string) bool {
 	if componentDefineJSON.Status.HasBackend {
 		backendComponentPath := "backend/components/" + componentName
 		wrappedBackendComponentPath := componentWrapDir + "/backend"
-		err := tools.CopyDirectory(backendComponentPath, wrappedBackendComponentPath)
+		err := commonpkgtools.CopyDirectory(backendComponentPath, wrappedBackendComponentPath)
 		if err != nil {
 			log.Println(err)
 			return false
@@ -63,20 +63,20 @@ func Exec(flags ...string) bool {
 	}
 
 	wrappedComponentJSONPath := componentWrapDir + "/component_define.json"
-	err = tools.CopyFile(componentDefJSONPath, wrappedComponentJSONPath)
+	err = commonpkgtools.CopyFile(componentDefJSONPath, wrappedComponentJSONPath)
 	if err != nil {
 		log.Println(err)
 		return false
 	}
 
-	tools.TarGzArchive(componentWrapDir, componentWrapDir+".tar.gz")
+	tools.ZipArchive(componentWrapDir, componentWrapDir+".zip")
 	err = commonpkgtools.RemoveDirectory(componentWrapDir)
 	if err != nil {
 		fmt.Println("アーカイブ作成中に発生したディレクトリの削除に失敗しました。必要であれば以下コマンドで削除してください。")
 		fmt.Println("rm -rf " + componentWrapDir)
 	}
 
-	fmt.Println("「" + componentWrapDir + ".tar.gz」にアーカイブの作成が完了しました。")
+	fmt.Println("「" + componentWrapDir + ".zip」にアーカイブの作成が完了しました。")
 
 	return true
 }

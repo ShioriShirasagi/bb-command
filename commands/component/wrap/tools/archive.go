@@ -5,8 +5,8 @@ import (
 	"os"
 )
 
-// TarGzArchive .tar.gz形式にする
-func TarGzArchive(basePath string, archivedPath string) error {
+// ZipArchive .zip形式にする
+func ZipArchive(basePath string, archivedPath string) error {
 	outFile, err := os.Create(archivedPath)
 	if err != nil {
 		return err
