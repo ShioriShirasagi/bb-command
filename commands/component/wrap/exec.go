@@ -44,7 +44,13 @@ func Exec(flags ...string) bool {
 	tools.FolderGenerator(componentWrapDir)
 
 	if componentDefineJSON.Status.HasFrontend {
-		// TODO: コンポーネントがフロントエンドを持っている場合の処理を書く
+		frontendComponentPath := "frontend/src/components/" + componentName
+		wrappedFrontendComponentPath := componentWrapDir + "/frontend"
+		err := tools.CopyDirectory(frontendComponentPath, wrappedFrontendComponentPath)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
 	}
 	if componentDefineJSON.Status.HasBackend {
 		backendComponentPath := "backend/components/" + componentName
