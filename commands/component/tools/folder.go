@@ -4,5 +4,5 @@ import "os"
 
 // RemoveDirectory ディレクトリを削除する
 func RemoveDirectory(path string) error {
-	return os.Remove(path)
+	return os.RemoveAll(path)
 }

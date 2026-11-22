@@ -37,7 +37,7 @@ func Exec(flags ...string) bool {
 	}
 
 	if alreadyPackageExists {
-		fmt.Println(componentName + "という名前のコンポーネントは既に存在します。")
+		fmt.Println(componentName + "のディレクトリは既に存在します。")
 		return false
 	}
 
@@ -76,7 +76,7 @@ func Exec(flags ...string) bool {
 		fmt.Println("rm -rf " + componentWrapDir)
 	}
 
-	fmt.Println("アーカイブの作成が完了しました。")
+	fmt.Println("「" + componentWrapDir + ".tar.gz」にアーカイブの作成が完了しました。")
 
 	return true
 }
