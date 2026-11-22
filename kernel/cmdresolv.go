@@ -37,5 +37,9 @@ func CommandResolver() {
 	}
 
 	// 先頭のコマンド名（pkg:wrap等）を除いてコマンド実行
-	commandFunc(args[1:]...)
+	success := commandFunc(args[1:]...)
+	if success {
+		os.Exit(0)
+	}
+	os.Exit(1)
 }
