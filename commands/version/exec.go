@@ -20,7 +20,7 @@ func Exec(flags ...string) bool {
 func cantContinue(flags []string) bool {
 	if len(flags) != 0 && flags[0] == "help" {
 		cmdDetail()
-		return false
+		return true
 	}
 	return false
 }
