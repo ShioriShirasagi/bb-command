@@ -2,12 +2,14 @@ package version
 
 import "fmt"
 
+const Version = "v0.0.1"
+
 func Exec(flags ...string) bool {
 	if cantContinue(flags) {
 		return false
 	}
 
-	ver := "v0.0.1"
+	ver := Version
 	name := "Bareborn BB Command"
 
 	fmt.Println(name)

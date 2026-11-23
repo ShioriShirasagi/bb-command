@@ -3,6 +3,7 @@ package wrap
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	commonpkgtools "github.com/ShioriShirasagi/bb-command/commands/component/tools"
 	"github.com/ShioriShirasagi/bb-command/commands/component/wrap/tools"
@@ -13,14 +14,19 @@ func Exec(flags ...string) bool {
 		return false
 	}
 
-	componentName := flags[0]
-	componentDefJSONPath := "component/define/" + componentName + ".bbcomp.json"
+	componentKey := flags[0]
+	owner, componentName, found := strings.Cut(componentKey, "/")
+	if !found || owner == "" || componentName == "" || strings.Contains(componentName, "/") {
+		fmt.Println("引数が不正です。コンポーネントの指定は「owner名/コンポーネント名」の形式でなければなりません。")
+		return false
+	}
+	componentDefJSONPath := "component/define/" + componentKey + ".bbcomp.json"
 	componentWrapDir := "homemade/" + componentName
 
 	// コンポーネント定義JSONの存在確認
 	fileExists := commonpkgtools.FileExists(componentDefJSONPath)
 	if !fileExists {
-		fmt.Println(componentName + "のコンポーネント定義JSONが見つかりません。")
+		fmt.Println(componentKey + "のコンポーネント定義JSONが見つかりません。")
 		return false
 	}
 
@@ -44,7 +50,7 @@ func Exec(flags ...string) bool {
 	commonpkgtools.FolderGenerator(componentWrapDir)
 
 	if componentDefineJSON.Status.HasFrontend {
-		frontendComponentPath := "frontend/src/components/" + componentName
+		frontendComponentPath := "frontend/src/components/" + componentKey
 		wrappedFrontendComponentPath := componentWrapDir + "/frontend"
 		err := commonpkgtools.CopyDirectory(frontendComponentPath, wrappedFrontendComponentPath)
 		if err != nil {
@@ -53,7 +59,7 @@ func Exec(flags ...string) bool {
 		}
 	}
 	if componentDefineJSON.Status.HasBackend {
-		backendComponentPath := "backend/components/" + componentName
+		backendComponentPath := "backend/components/" + componentKey
 		wrappedBackendComponentPath := componentWrapDir + "/backend"
 		err := commonpkgtools.CopyDirectory(backendComponentPath, wrappedBackendComponentPath)
 		if err != nil {
@@ -97,5 +103,5 @@ func cantContinue(flags []string) bool {
 
 // cmdDetail コマンド詳細を表示する
 func cmdDetail() {
-	fmt.Print("開発したパッケージをまとめて頒布可能な形式にします。コンポーネント名を引数に取ります。")
+	fmt.Print("開発したパッケージをまとめて頒布可能な形式にします。ShioriShirasagi/SampleComponentのように、owner名/コンポーネント名を引数に取ります。")
 }

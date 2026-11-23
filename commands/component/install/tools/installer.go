@@ -2,72 +2,61 @@ package tools
 
 import (
 	"fmt"
-	"log"
+	"os"
+	"path/filepath"
 
 	commonpkgtools "github.com/ShioriShirasagi/bb-command/commands/component/tools"
 )
 
-// InstallComponent コンポーネントをインストールする
-func InstallComponent(componentDefineJSON commonpkgtools.ComponentDefineJSON, sourcePath string) bool {
-	componentName := componentDefineJSON.ComponentName
-	frontendComponentPath := "frontend/src/components/" + componentName
-	if componentDefineJSON.Status.HasFrontend {
-		wrappedFrontendComponentPath := sourcePath + "/frontend"
-		alreadyComponentExists, err := commonpkgtools.DirectoryExists(frontendComponentPath)
-		if err != nil {
-			log.Println(err)
-			return false
-		}
-		if alreadyComponentExists {
-			fmt.Println(componentName + "は既にインストールされています。同名のコンポーネントをアンインストールしてから再度インストールしてください。")
-			return false
-		}
-
-		err = commonpkgtools.CopyDirectory(wrappedFrontendComponentPath, frontendComponentPath)
-		if err != nil {
-			log.Println(err)
-			return false
-		}
+// componentPaths コンポーネントの配置先を返す
+func componentPaths(key string, def commonpkgtools.ComponentDefineJSON) []string {
+	var paths []string
+	if def.Status.HasFrontend {
+		paths = append(paths, frontendComponentsRoot+"/"+key)
 	}
-	if componentDefineJSON.Status.HasBackend {
-		backendComponentPath := "backend/components/" + componentName
-		wrappedBackendComponentPath := sourcePath + "/backend"
-		alreadyComponentExists, err := commonpkgtools.DirectoryExists(backendComponentPath)
-		if err != nil {
-			log.Println(err)
-			return false
-		}
-		if alreadyComponentExists {
-			fmt.Println(componentName + "は既にインストールされています。同名のコンポーネントをアンインストールしてから再度インストールしてください。")
-			if componentDefineJSON.Status.HasFrontend {
-				err = commonpkgtools.RemoveDirectory(frontendComponentPath)
-				if err != nil {
-					fmt.Println("インストールが進行していたフロントエンドコンポーネントの削除に失敗しました。以下コマンドで削除してください。")
-					fmt.Println("rm -rf " + frontendComponentPath)
-				}
-			}
-			return false
-		}
+	if def.Status.HasBackend {
+		paths = append(paths, backendComponentsRoot+"/"+key)
+	}
+	return paths
+}
 
-		err = commonpkgtools.CopyDirectory(backendComponentPath, wrappedBackendComponentPath)
+// UninstallComponent インストールしたコンポーネントを削除する
+func UninstallComponent(key string, def commonpkgtools.ComponentDefineJSON) {
+	for _, path := range componentPaths(key, def) {
+		if err := commonpkgtools.RemoveDirectory(path); err != nil {
+			fmt.Println(key + "の削除に失敗しました。以下コマンドで削除してください。")
+			fmt.Println("rm -rf " + path)
+			continue
+		}
+		os.Remove(filepath.Dir(path)) // ownerディレクトリが空になっていれば消す
+	}
+}
+
+// InstallComponent コンポーネントを「owner/name」の配置先にコピーする
+func InstallComponent(key string, def commonpkgtools.ComponentDefineJSON, sourcePath string) error {
+	for _, path := range componentPaths(key, def) {
+		exists, err := commonpkgtools.DirectoryExists(path)
 		if err != nil {
-			log.Println(err)
-			if componentDefineJSON.Status.HasFrontend {
-				err = commonpkgtools.RemoveDirectory(frontendComponentPath)
-				if err != nil {
-					fmt.Println("インストールが進行していたフロントエンドコンポーネントの削除に失敗しました。以下コマンドで削除してください。")
-					fmt.Println("rm -rf " + frontendComponentPath)
-				}
-			}
-			return false
+			return err
+		}
+		if exists {
+			return fmt.Errorf("%s は既に存在します。同名のコンポーネントをアンインストールしてから再度インストールしてください", path)
 		}
 	}
 
-	err := commonpkgtools.RemoveDirectory(sourcePath)
-	if err != nil {
-		fmt.Println("インストール時に使用したディレクトリの削除に失敗しました。必要なら以下コマンドで削除してください。")
-		fmt.Println("rm -rf " + sourcePath)
-		return false
+	if def.Status.HasFrontend {
+		err := commonpkgtools.CopyDirectory(sourcePath+"/frontend", frontendComponentsRoot+"/"+key)
+		if err != nil {
+			UninstallComponent(key, def)
+			return err
+		}
 	}
-	return true
+	if def.Status.HasBackend {
+		err := commonpkgtools.CopyDirectory(sourcePath+"/backend", backendComponentsRoot+"/"+key)
+		if err != nil {
+			UninstallComponent(key, def)
+			return err
+		}
+	}
+	return nil
 }

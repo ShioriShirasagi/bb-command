@@ -19,9 +19,9 @@ type Release struct {
 func FindGitHubComponent(componentOwner string, componentName string, version string) (downloadURL string, fileName string, err error) {
 	var apiURL string
 	if version == "" || version == "latest" {
-		apiURL = fmt.Sprintf("https://github.com/repos/%s/%s/releases/latest", componentOwner, componentName)
+		apiURL = fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", componentOwner, componentName)
 	} else {
-		apiURL = fmt.Sprintf("https://github.com/repos/%s/%s/releases/tags/%s", componentOwner, componentName, version)
+		apiURL = fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/tags/%s", componentOwner, componentName, version)
 	}
 
 	req, err := http.NewRequest("GET", apiURL, nil)
@@ -45,7 +45,7 @@ func FindGitHubComponent(componentOwner string, componentName string, version st
 		return "", "", err
 	}
 
-	// 条件に合うアセットを検索（必要に応じて拡張子やOS条件を調整してください）
+	// 条件に合うアセットを検索
 	for _, asset := range rel.Assets {
 		if strings.HasSuffix(asset.Name, ".zip") {
 			return asset.BrowserDownloadURL, asset.Name, nil
